@@ -20,6 +20,29 @@ func NewProfileHandler(db *gorm.DB) *ProfileHandler {
 	}
 }
 
+func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetProfilesSuggestionRequest) (*pb.GetProfilesSuggestionResponse, error) {
+	profiles := []models.Profile{}
+	err := p.db.Not("user_id = ?", req.UserId).Find(&profiles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	profilesResponse := []*pb.Profile{}
+	for _, profile := range profiles {
+		profilesResponse = append(profilesResponse, &pb.Profile{
+			Id:     uint32(profile.ID),
+			UserId: uint32(profile.UserID),
+			Age:    int32(profile.Age),
+			Bio:    profile.Bio,
+			Photos: profile.Photos,
+		})
+	}
+
+	return &pb.GetProfilesSuggestionResponse{
+		Profiles: profilesResponse,
+	}, nil
+}
+
 func (p *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
 	profile := models.Profile{}
 	err := p.db.Where("user_id = ?", req.UserId).First(&profile).Error

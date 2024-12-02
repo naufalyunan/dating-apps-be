@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProfileService_CreateProfile_FullMethodName = "/profile.ProfileService/CreateProfile"
-	ProfileService_GetProfile_FullMethodName    = "/profile.ProfileService/GetProfile"
-	ProfileService_UpdateProfile_FullMethodName = "/profile.ProfileService/UpdateProfile"
-	ProfileService_DeleteProfile_FullMethodName = "/profile.ProfileService/DeleteProfile"
+	ProfileService_GetProfilesSuggestion_FullMethodName = "/profile.ProfileService/GetProfilesSuggestion"
+	ProfileService_CreateProfile_FullMethodName         = "/profile.ProfileService/CreateProfile"
+	ProfileService_GetProfile_FullMethodName            = "/profile.ProfileService/GetProfile"
+	ProfileService_UpdateProfile_FullMethodName         = "/profile.ProfileService/UpdateProfile"
+	ProfileService_DeleteProfile_FullMethodName         = "/profile.ProfileService/DeleteProfile"
 )
 
 // ProfileServiceClient is the client API for ProfileService service.
@@ -31,6 +32,8 @@ const (
 //
 // The Profile service definition
 type ProfileServiceClient interface {
+	// Get All Profiles
+	GetProfilesSuggestion(ctx context.Context, in *GetProfilesSuggestionRequest, opts ...grpc.CallOption) (*GetProfilesSuggestionResponse, error)
 	// Create a new profile for a user
 	CreateProfile(ctx context.Context, in *CreateProfileRequest, opts ...grpc.CallOption) (*CreateProfileResponse, error)
 	// Get a profile by user ID
@@ -47,6 +50,16 @@ type profileServiceClient struct {
 
 func NewProfileServiceClient(cc grpc.ClientConnInterface) ProfileServiceClient {
 	return &profileServiceClient{cc}
+}
+
+func (c *profileServiceClient) GetProfilesSuggestion(ctx context.Context, in *GetProfilesSuggestionRequest, opts ...grpc.CallOption) (*GetProfilesSuggestionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProfilesSuggestionResponse)
+	err := c.cc.Invoke(ctx, ProfileService_GetProfilesSuggestion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *profileServiceClient) CreateProfile(ctx context.Context, in *CreateProfileRequest, opts ...grpc.CallOption) (*CreateProfileResponse, error) {
@@ -95,6 +108,8 @@ func (c *profileServiceClient) DeleteProfile(ctx context.Context, in *DeleteProf
 //
 // The Profile service definition
 type ProfileServiceServer interface {
+	// Get All Profiles
+	GetProfilesSuggestion(context.Context, *GetProfilesSuggestionRequest) (*GetProfilesSuggestionResponse, error)
 	// Create a new profile for a user
 	CreateProfile(context.Context, *CreateProfileRequest) (*CreateProfileResponse, error)
 	// Get a profile by user ID
@@ -113,6 +128,9 @@ type ProfileServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedProfileServiceServer struct{}
 
+func (UnimplementedProfileServiceServer) GetProfilesSuggestion(context.Context, *GetProfilesSuggestionRequest) (*GetProfilesSuggestionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProfilesSuggestion not implemented")
+}
 func (UnimplementedProfileServiceServer) CreateProfile(context.Context, *CreateProfileRequest) (*CreateProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateProfile not implemented")
 }
@@ -144,6 +162,24 @@ func RegisterProfileServiceServer(s grpc.ServiceRegistrar, srv ProfileServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&ProfileService_ServiceDesc, srv)
+}
+
+func _ProfileService_GetProfilesSuggestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProfilesSuggestionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServiceServer).GetProfilesSuggestion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProfileService_GetProfilesSuggestion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServiceServer).GetProfilesSuggestion(ctx, req.(*GetProfilesSuggestionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ProfileService_CreateProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -225,6 +261,10 @@ var ProfileService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "profile.ProfileService",
 	HandlerType: (*ProfileServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetProfilesSuggestion",
+			Handler:    _ProfileService_GetProfilesSuggestion_Handler,
+		},
 		{
 			MethodName: "CreateProfile",
 			Handler:    _ProfileService_CreateProfile_Handler,

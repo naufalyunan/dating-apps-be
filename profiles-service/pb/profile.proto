@@ -6,6 +6,9 @@ option go_package = "/proto/pb";
 
 // The Profile service definition
 service ProfileService {
+    //Get All Profiles
+    rpc GetProfilesSuggestion(GetProfilesSuggestionRequest) returns (GetProfilesSuggestionResponse);
+
     // Create a new profile for a user
     rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
 
@@ -26,6 +29,16 @@ message Profile {
     int32 age = 3;              // Age of the user
     string bio = 4;             // Short bio of the user
     repeated string photos = 5; // List of photo URLs
+}
+
+//Request to get profiles suggestions
+message GetProfilesSuggestionRequest {
+    uint32 user_id = 1;         // User ID to get suggestions for
+}
+
+// Response to get all profiles
+message GetProfilesSuggestionResponse {
+    repeated Profile profiles = 1; // List of profiles
 }
 
 // Request to create a new profile
