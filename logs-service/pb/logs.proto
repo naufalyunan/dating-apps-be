@@ -17,7 +17,7 @@ service LogService {
 
 // Message to define an activity log entry
 message LogEntry {
-    string id = 1;          // Unique identifier for the log
+    uint32 id = 1;          // Unique identifier for the log
     uint32 user_id = 2;     // User ID associated with the action
     string action_type = 3; // Type of action (e.g., "swipe", "purchase")
     string details = 4;     // Additional details about the action
