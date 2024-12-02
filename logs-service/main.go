@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"logs/configs"
-	"logs/handlers"
-	pb "logs/pb/generated"
+	"logs-service/configs"
+	"logs-service/handlers"
+	pb "logs-service/pb/generated"
 	"net"
 	"os"
 

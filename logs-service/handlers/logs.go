@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"errors"
-	"logs/models"
-	pb "logs/pb/generated"
+	"logs-service/models"
+	pb "logs-service/pb/generated"
 	"time"
 
 	"gorm.io/gorm"

@@ -3,7 +3,7 @@ package configs
 import (
 	"fmt"
 	"log"
-	"logs/models"
+	"logs-service/models"
 	"os"
 
 	"github.com/joho/godotenv"

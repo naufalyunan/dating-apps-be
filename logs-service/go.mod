@@ -1,4 +1,4 @@
-module logs
+module logs-service
 
 go 1.22.7
 
