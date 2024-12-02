@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package user_grpc;
+
+option go_package = "/proto/pb";
+
+// The user service definition
+service UserService {
+    // Create a new user
+    rpc Register(CreateUserRequest) returns (CreateUserResponse);
+
+    // Get user details by ID
+    rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+    // Update user information
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+    // Delete a user by ID
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+
+    // Authenticate user login
+    rpc Login(LoginUserRequest) returns (LoginUserResponse);
+}
+
+// User message for user data
+message User {
+    uint32 id = 1;           // Unique identifier for the user
+    string username = 2;     // Username of the user
+    string email = 3;        // Email of the user
+    bool is_premium = 5;     // Premium status of the user
+    bool is_verified = 6;    // Verification status of the user
+}
+
+// Request to create a new user
+message CreateUserRequest {
+    string username = 1;     // Username of the user
+    string email = 2;        // Email of the user
+    string password = 3;     // Password (will be hashed server-side)
+}
+
+// Response after creating a user
+message CreateUserResponse {
+    string status = 1;       // Status message (e.g., "User created successfully")
+    User user = 2;           // The created user
+}
+
+// Request to get a user's details
+message GetUserRequest {
+    string id = 1;           // User ID
+}
+
+// Response with user details
+message GetUserResponse {
+    User user = 1;           // The user's details
+}
+
+// Request to update user information
+message UpdateUserRequest {
+    string id = 1;           // User ID
+    string username = 2;     // (Optional) New username
+    string email = 3;        // (Optional) New email
+    bool is_premium = 4;     // (Optional) Premium status
+    bool is_verified = 5;    // (Optional) Verification status
+}
+
+// Response after updating a user
+message UpdateUserResponse {
+    string status = 1;       // Status message (e.g., "User updated successfully")
+    User user = 2;           // The updated user details
+}
+
+// Request to delete a user
+message DeleteUserRequest {
+    string id = 1;           // User ID
+}
+
+// Response after deleting a user
+message DeleteUserResponse {
+    string status = 1;       // Status message (e.g., "User deleted successfully")
+}
+
+// Request to authenticate a user
+message LoginUserRequest {
+    string email = 1;        // Email of the user
+    string password = 2;     // Password of the user
+}
+
+// Response after authenticating a user
+message LoginUserResponse {
+    string status = 1;       // Status message (e.g., "Login successful")
+    string token = 2;        // JWT token for authenticated sessions
+    User user = 3;           // User details
+}
