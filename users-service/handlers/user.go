@@ -6,6 +6,7 @@ import (
 	"os"
 	"users-service/models"
 	pb "users-service/pb/generated"
+	"users-service/services"
 	"users-service/utils"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -14,12 +15,14 @@ import (
 
 type UserHandler struct {
 	pb.UnimplementedUserServiceServer
-	db *gorm.DB
+	db             *gorm.DB
+	profileService services.ProfileService
 }
 
-func NewUserHandler(db *gorm.DB) *UserHandler {
+func NewUserHandler(db *gorm.DB, profileService services.ProfileService) *UserHandler {
 	return &UserHandler{
-		db: db,
+		db:             db,
+		profileService: profileService,
 	}
 }
 
