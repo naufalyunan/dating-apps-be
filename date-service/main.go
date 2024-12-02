@@ -4,6 +4,7 @@ import (
 	"date-service/configs"
 	"date-service/handlers"
 	pb "date-service/pb/generated"
+	"date-service/services"
 	"fmt"
 	"log"
 	"net"
@@ -16,7 +17,8 @@ func main() {
 	db := configs.CreateDBInstance()
 
 	//instantiate services
-	swipeHandler := handlers.NewSwipeHandler(db)
+	profileService := services.NewProfileService()
+	swipeHandler := handlers.NewSwipeHandler(db, profileService)
 
 	grpcServer := grpc.NewServer()
 

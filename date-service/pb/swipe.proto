@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package swipe;
 
+
 option go_package = "/proto/pb";
 
 // The Swipe service definition
@@ -46,13 +47,13 @@ message GetSuggestionsRequest {
 
 // Response with a list of suggested profiles
 message GetSuggestionsResponse {
-    repeated Profile profiles = 1; // List of suggested profiles
+    repeated ProfileShow profiles = 1; // List of suggested profiles
 }
 
 // Message to define a user profile
-message Profile {
+message ProfileShow {
     uint32 id = 1;              // Unique identifier for the profile
-    string username = 2;        // Username of the profile
+    uint32 user_id = 2;        // User ID of the profile
     int32 age = 3;              // Age of the profile
     string bio = 4;             // Bio of the profile
     repeated string photos = 5; // URLs of profile photos
