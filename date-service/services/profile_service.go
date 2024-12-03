@@ -2,19 +2,16 @@ package services
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"date-service/entities"
 	pb "date-service/pb/generated"
 	"log"
 	"os"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 type ProfileService interface {
-	GetProfiles(id int) ([]*entities.Profile, error)
+	GetProfiles(id int, limit int) ([]*entities.Profile, error)
 	CreateProfile(req entities.Profile) (*entities.Profile, error)
 	UpdateProfile(req entities.Profile) (*entities.Profile, error)
 	GetProfile(id int) (*entities.Profile, error)
@@ -23,16 +20,17 @@ type ProfileService interface {
 func NewProfileClient() pb.ProfileServiceClient {
 	addr := os.Getenv("PROFILE_SERVICE_ADDR")
 
-	opts := []grpc.DialOption{}
-	systemRoots, err := x509.SystemCertPool()
-	if err != nil {
-		log.Fatal(err)
-	}
-	cred := credentials.NewTLS(&tls.Config{
-		RootCAs: systemRoots,
-	})
-	opts = append(opts, grpc.WithTransportCredentials(cred))
-	conn, err := grpc.NewClient(addr, opts...)
+	// opts := []grpc.DialOption{}
+	// systemRoots, err := x509.SystemCertPool()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// cred := credentials.NewTLS(&tls.Config{
+	// 	RootCAs: systemRoots,
+	// })
+	// opts = append(opts, grpc.WithTransportCredentials(cred))
+	// conn, err := grpc.NewClient(addr, opts...)
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,7 +50,7 @@ type profileService struct {
 	profileClient pb.ProfileServiceClient
 }
 
-func (p *profileService) GetProfiles(id int) ([]*entities.Profile, error) {
+func (p *profileService) GetProfiles(id int, limit int) ([]*entities.Profile, error) {
 	res, err := p.profileClient.GetProfilesSuggestion(context.TODO(), &pb.GetProfilesSuggestionRequest{
 		UserId: uint32(id),
 	})

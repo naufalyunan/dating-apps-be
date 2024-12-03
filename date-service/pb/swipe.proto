@@ -20,16 +20,15 @@ service SwipeService {
 // Message to define a swipe action
 message SwipeAction {
     uint32 id = 1;              // Unique identifier for the swipe
-    uint32 swiper_id = 2;       // User ID of the swiper
-    uint32 swiped_profile_id = 3; // User ID of the profile being swiped
+    uint32 swiper_user_id = 2;       // User ID of the swiper
+    uint32 swiped_profile_user_id = 3; // User ID of the profile being swiped
     string action = 4;          // Swipe action: 'like' or 'pass'
-    string timestamp = 5;       // Timestamp of the swipe
 }
 
 // Request to record a swipe action
 message RecordSwipeRequest {
-    uint32 swiper_id = 1;       // User ID of the swiper
-    uint32 swiped_profile_id = 2; // User ID of the profile being swiped
+    uint32 swiper_user_id = 1;       // User ID of the swiper
+    uint32 swiped_profile_user_id = 2; // User ID of the profile being swiped
     string action = 3;          // Swipe action: 'like' or 'pass'
 }
 

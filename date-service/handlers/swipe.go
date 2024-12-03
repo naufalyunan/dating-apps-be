@@ -8,6 +8,7 @@ import (
 	"date-service/services"
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -27,33 +28,58 @@ func NewSwipeHandler(db *gorm.DB, profileService services.ProfileService) *Swipe
 
 func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeRequest) (*pb.RecordSwipeResponse, error) {
 	//validate requests
-	if req.SwiperId == 0 {
-		return nil, errors.New("swiper_id is required")
+	if req.SwiperUserId == 0 {
+		return nil, errors.New("swiper_user_id is required")
 	}
 
-	if req.SwipedProfileId == 0 {
-		return nil, errors.New("swiped_id is required")
+	if req.SwipedProfileUserId == 0 {
+		return nil, errors.New("swiped_user_id is required")
 	}
 
 	if req.Action == "" {
 		return nil, errors.New("action is required")
 	}
 
-	// create new swipe
-	swipe := models.Swipe{
-		SwiperID:        uint(req.SwiperId),
-		SwipedProfileID: uint(req.SwipedProfileId),
-		Action:          req.Action,
+	//check if swiper user id and swiped user id is the same
+	if req.SwiperUserId == req.SwipedProfileUserId {
+		return nil, errors.New("You cannot swipe yourself")
 	}
 
-	err := s.db.Create(&swipe).Error
+	//check if user already swiped
+	var swipe models.Swipe
+	err := s.db.Where("swiper_user_id = ? AND swiped_profile_user_id = ?", req.SwiperUserId, req.SwipedProfileUserId).First(&swipe).Error
+	if err == nil {
+		return nil, errors.New("You have already swiped this profile")
+	}
+
+	//check if it is already swiping 10 times in history for 24 hours, if it is then return Error
+	timeLimit := time.Now().Add(-24 * time.Hour)
+
+	var swipes []models.Swipe
+	err = s.db.Where("swiper_user_id = ? AND created_at > ?", req.SwiperUserId, timeLimit).Find(&swipes).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(swipes) >= 10 {
+		return nil, errors.New("You have reached the limit of swiping 10 times in 24 hours")
+	}
+
+	// create new swipe
+	swipe = models.Swipe{
+		SwiperUserID:        uint(req.SwiperUserId),
+		SwipedProfileUserID: uint(req.SwipedProfileUserId),
+		Action:              req.Action,
+	}
+
+	err = s.db.Create(&swipe).Error
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.RecordSwipeResponse{
-		Status: fmt.Sprintf("Successfully %s profile with id %d", req.Action, req.SwipedProfileId),
-		Swipe:  &pb.SwipeAction{Id: uint32(swipe.ID), SwiperId: uint32(swipe.SwiperID), SwipedProfileId: uint32(swipe.SwipedProfileID), Action: swipe.Action},
+		Status: fmt.Sprintf("Successfully %s profile with id %d", req.Action, req.SwipedProfileUserId),
+		Swipe:  &pb.SwipeAction{Id: uint32(swipe.ID), SwiperUserId: uint32(swipe.SwiperUserID), SwipedProfileUserId: uint32(swipe.SwipedProfileUserID), Action: swipe.Action},
 	}, nil
 }
 
@@ -77,7 +103,7 @@ func (s *SwipeHandler) GetSuggestions(ctx context.Context, req *pb.GetSuggestion
 	}
 
 	//get suggested profiles
-	profiles, err := s.profileService.GetProfiles(int(req.UserId))
+	profiles, err := s.profileService.GetProfiles(int(req.UserId), int(req.Limit))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +111,7 @@ func (s *SwipeHandler) GetSuggestions(ctx context.Context, req *pb.GetSuggestion
 	//make sure the profiles are not the ones that the user has swiped
 	//get all the swipes of the user
 	var swipes []models.Swipe
-	err = s.db.Where("swiper_id = ?", req.UserId).Find(&swipes).Error
+	err = s.db.Where("swiper_user_id = ?", req.UserId).Find(&swipes).Error
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +119,7 @@ func (s *SwipeHandler) GetSuggestions(ctx context.Context, req *pb.GetSuggestion
 	//get the ids of the profiles that the user has swiped
 	swipedProfileIds := make([]uint, 0)
 	for _, swipe := range swipes {
-		swipedProfileIds = append(swipedProfileIds, swipe.SwipedProfileID)
+		swipedProfileIds = append(swipedProfileIds, swipe.SwipedProfileUserID)
 	}
 
 	//filter out the profiles that the user has swiped
@@ -104,7 +130,7 @@ func (s *SwipeHandler) GetSuggestions(ctx context.Context, req *pb.GetSuggestion
 		}
 	}
 
-	//limit the number of profiles to the limit
+	//insert limit after filter
 	if len(filteredProfiles) > int(req.Limit) {
 		filteredProfiles = filteredProfiles[:req.Limit]
 	}
@@ -134,7 +160,7 @@ func (s *SwipeHandler) GetSwipeHistory(ctx context.Context, req *pb.GetSwipeHist
 
 	//get all the swipes of the user
 	var swipes []models.Swipe
-	err := s.db.Where("swiper_id = ?", req.UserId).Find(&swipes).Error
+	err := s.db.Where("swiper_user_id = ?", req.UserId).Find(&swipes).Error
 	if err != nil {
 		return nil, err
 	}
@@ -143,10 +169,10 @@ func (s *SwipeHandler) GetSwipeHistory(ctx context.Context, req *pb.GetSwipeHist
 	converted := make([]*pb.SwipeAction, 0)
 	for _, swipe := range swipes {
 		converted = append(converted, &pb.SwipeAction{
-			Id:              uint32(swipe.ID),
-			SwiperId:        uint32(swipe.SwiperID),
-			SwipedProfileId: uint32(swipe.SwipedProfileID),
-			Action:          swipe.Action,
+			Id:                  uint32(swipe.ID),
+			SwiperUserId:        uint32(swipe.SwiperUserID),
+			SwipedProfileUserId: uint32(swipe.SwipedProfileUserID),
+			Action:              swipe.Action,
 		})
 	}
 

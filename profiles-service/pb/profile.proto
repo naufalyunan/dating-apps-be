@@ -34,7 +34,6 @@ message Profile {
 //Request to get profiles suggestions
 message GetProfilesSuggestionRequest {
     uint32 user_id = 1;         // User ID to get suggestions for
-    uint32 limit = 2; 
 }
 
 // Response to get all profiles

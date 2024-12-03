@@ -26,15 +26,10 @@ func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetP
 		return nil, errors.New("user_id is required")
 	}
 
-	//validate limit
-	if req.Limit == 0 {
-		req.Limit = 20
-	}
-
 	// get all profiles except the user
 
 	profiles := []models.Profile{}
-	err := p.db.Limit(int(req.Limit)).Not("user_id = ?", req.UserId).Find(&profiles).Error
+	err := p.db.Not("user_id = ?", req.UserId).Find(&profiles).Error
 	if err != nil {
 		return nil, err
 	}
