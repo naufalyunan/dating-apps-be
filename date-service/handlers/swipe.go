@@ -77,6 +77,26 @@ func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeReque
 		return nil, err
 	}
 
+	// Check for a match if the swipe action is "like"
+	if req.Action == "like" {
+		var reverseSwipe models.Swipe
+		err = s.db.Where("swiper_user_id = ? AND swiped_profile_user_id = ? AND action = ?", req.SwipedProfileUserId, req.SwiperUserId, "like").First(&reverseSwipe).Error
+		if err == nil {
+			// Mutual "like" found, create a match
+			match := models.Match{
+				User1ID: uint(req.SwiperUserId),
+				User2ID: uint(req.SwipedProfileUserId),
+			}
+			err = s.db.Create(&match).Error
+			if err != nil {
+				return nil, err
+			}
+
+			// Optionally, notify the users of the match (e.g., via a message queue or push notification)
+			fmt.Printf("Match found between user %d and user %d\n", req.SwiperUserId, req.SwipedProfileUserId)
+		}
+	}
+
 	return &pb.RecordSwipeResponse{
 		Status: fmt.Sprintf("Successfully %s profile with id %d", req.Action, req.SwipedProfileUserId),
 		Swipe:  &pb.SwipeAction{Id: uint32(swipe.ID), SwiperUserId: uint32(swipe.SwiperUserID), SwipedProfileUserId: uint32(swipe.SwipedProfileUserID), Action: swipe.Action},
