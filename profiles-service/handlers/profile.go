@@ -21,8 +21,20 @@ func NewProfileHandler(db *gorm.DB) *ProfileHandler {
 }
 
 func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetProfilesSuggestionRequest) (*pb.GetProfilesSuggestionResponse, error) {
+	//validate the field
+	if req.UserId == 0 {
+		return nil, errors.New("user_id is required")
+	}
+
+	//validate limit
+	if req.Limit == 0 {
+		req.Limit = 20
+	}
+
+	// get all profiles except the user
+
 	profiles := []models.Profile{}
-	err := p.db.Not("user_id = ?", req.UserId).Find(&profiles).Error
+	err := p.db.Limit(int(req.Limit)).Not("user_id = ?", req.UserId).Find(&profiles).Error
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +56,17 @@ func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetP
 }
 
 func (p *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
+	//validate the field
+	if req.UserId == 0 {
+		return nil, errors.New("user_id is required")
+	}
+
 	profile := models.Profile{}
 	err := p.db.Where("user_id = ?", req.UserId).First(&profile).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("profile not found")
+		}
 		return nil, err
 	}
 
