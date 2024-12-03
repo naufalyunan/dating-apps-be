@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"users-service/models"
 	pb "users-service/pb/generated"
@@ -115,4 +116,47 @@ func (u *UserHandler) Login(ctx context.Context, req *pb.LoginUserRequest) (*pb.
 			IsVerified: user.IsVerified,
 		},
 	}, nil
+}
+
+func (u *UserHandler) IsValidToken(ctx context.Context, req *pb.IsValidTokenRequest) (*pb.IsValidTokenResponse, error) {
+	//validate requests
+	if req.Token == "" {
+		return nil, errors.New("token is required")
+	}
+
+	key := os.Getenv("JWT_SECRET")
+	token, err := jwt.Parse(req.Token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(key), nil
+	})
+
+	if err != nil {
+		return nil, errors.New("invalid token")
+	}
+
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token '%v',", token)
+	}
+
+	var user models.User
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token")
+	}
+
+	err = u.db.Where("email = ?", claims["email"]).First(&user).Error
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	res := &pb.IsValidTokenResponse{
+		Valid: true,
+		User: &pb.User{
+			Id:         uint32(user.ID),
+			Email:      user.Email,
+			Username:   user.Username,
+			IsPremium:  user.IsPremium,
+			IsVerified: user.IsVerified,
+		},
+	}
+	return res, nil
 }

@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_Register_FullMethodName   = "/user_grpc.UserService/Register"
-	UserService_GetUser_FullMethodName    = "/user_grpc.UserService/GetUser"
-	UserService_UpdateUser_FullMethodName = "/user_grpc.UserService/UpdateUser"
-	UserService_DeleteUser_FullMethodName = "/user_grpc.UserService/DeleteUser"
-	UserService_Login_FullMethodName      = "/user_grpc.UserService/Login"
+	UserService_Register_FullMethodName     = "/user_grpc.UserService/Register"
+	UserService_GetUser_FullMethodName      = "/user_grpc.UserService/GetUser"
+	UserService_UpdateUser_FullMethodName   = "/user_grpc.UserService/UpdateUser"
+	UserService_DeleteUser_FullMethodName   = "/user_grpc.UserService/DeleteUser"
+	UserService_Login_FullMethodName        = "/user_grpc.UserService/Login"
+	UserService_IsValidToken_FullMethodName = "/user_grpc.UserService/IsValidToken"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -42,6 +43,8 @@ type UserServiceClient interface {
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	// Authenticate user login
 	Login(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
+	// Authenticate Token
+	IsValidToken(ctx context.Context, in *IsValidTokenRequest, opts ...grpc.CallOption) (*IsValidTokenResponse, error)
 }
 
 type userServiceClient struct {
@@ -102,6 +105,16 @@ func (c *userServiceClient) Login(ctx context.Context, in *LoginUserRequest, opt
 	return out, nil
 }
 
+func (c *userServiceClient) IsValidToken(ctx context.Context, in *IsValidTokenRequest, opts ...grpc.CallOption) (*IsValidTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IsValidTokenResponse)
+	err := c.cc.Invoke(ctx, UserService_IsValidToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -118,6 +131,8 @@ type UserServiceServer interface {
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	// Authenticate user login
 	Login(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
+	// Authenticate Token
+	IsValidToken(context.Context, *IsValidTokenRequest) (*IsValidTokenResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -142,6 +157,9 @@ func (UnimplementedUserServiceServer) DeleteUser(context.Context, *DeleteUserReq
 }
 func (UnimplementedUserServiceServer) Login(context.Context, *LoginUserRequest) (*LoginUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedUserServiceServer) IsValidToken(context.Context, *IsValidTokenRequest) (*IsValidTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsValidToken not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -254,6 +272,24 @@ func _UserService_Login_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_IsValidToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsValidTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).IsValidToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_IsValidToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).IsValidToken(ctx, req.(*IsValidTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -280,6 +316,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Login",
 			Handler:    _UserService_Login_Handler,
+		},
+		{
+			MethodName: "IsValidToken",
+			Handler:    _UserService_IsValidToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
