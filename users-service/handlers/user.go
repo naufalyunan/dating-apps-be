@@ -160,3 +160,71 @@ func (u *UserHandler) IsValidToken(ctx context.Context, req *pb.IsValidTokenRequ
 	}
 	return res, nil
 }
+
+func (u *UserHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	//validate requests
+	if req.Id == 0 {
+		return nil, errors.New("id is required")
+	}
+
+	var user models.User
+	err := u.db.Where("id = ?", req.Id).First(&user).Error
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	return &pb.GetUserResponse{
+		User: &pb.User{
+			Id:         uint32(user.ID),
+			Email:      user.Email,
+			Username:   user.Username,
+			IsPremium:  user.IsPremium,
+			IsVerified: user.IsVerified,
+		},
+	}, nil
+}
+
+func (u *UserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	//validate requests
+	if req.Id == 0 {
+		return nil, errors.New("id is required")
+	}
+
+	var user models.User
+	err := u.db.Where("id = ?", req.Id).First(&user).Error
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	if req.Email != "" {
+		user.Email = req.Email
+	}
+
+	if req.Username != "" {
+		user.Username = req.Username
+	}
+
+	if req.IsPremium {
+		user.IsPremium = req.IsPremium
+	}
+
+	if req.IsVerified {
+		user.IsVerified = req.IsVerified
+	}
+
+	err = u.db.Save(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.UpdateUserResponse{
+		Status: "User Updated Successfully",
+		User: &pb.User{
+			Id:         uint32(user.ID),
+			Email:      user.Email,
+			Username:   user.Username,
+			IsPremium:  user.IsPremium,
+			IsVerified: user.IsVerified,
+		},
+	}, nil
+}

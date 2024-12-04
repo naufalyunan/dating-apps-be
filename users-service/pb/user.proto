@@ -58,7 +58,7 @@ message CreateUserResponse {
 
 // Request to get a user's details
 message GetUserRequest {
-    string id = 1;           // User ID
+    uint32 id = 1;           // User ID
 }
 
 // Response with user details
@@ -68,7 +68,7 @@ message GetUserResponse {
 
 // Request to update user information
 message UpdateUserRequest {
-    string id = 1;           // User ID
+    uint32 id = 1;           // User ID
     string username = 2;     // (Optional) New username
     string email = 3;        // (Optional) New email
     bool is_premium = 4;     // (Optional) Premium status
