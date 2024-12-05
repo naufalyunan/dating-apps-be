@@ -5,22 +5,33 @@ import (
 	"errors"
 	"profiles-service/models"
 	pb "profiles-service/pb/generated"
+	"profiles-service/services"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 )
 
 type ProfileHandler struct {
 	pb.UnimplementedProfileServiceServer
-	db *gorm.DB
+	db          *gorm.DB
+	userService services.UserService
 }
 
-func NewProfileHandler(db *gorm.DB) *ProfileHandler {
+func NewProfileHandler(db *gorm.DB, userService services.UserService) *ProfileHandler {
 	return &ProfileHandler{
-		db: db,
+		db:          db,
+		userService: userService,
 	}
 }
 
 func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetProfilesSuggestionRequest) (*pb.GetProfilesSuggestionResponse, error) {
+	// validate token and get user
+	_, err := p.userService.ValidateAndGetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
+	}
+
 	//validate the field
 	if req.UserId == 0 {
 		return nil, errors.New("user_id is required")
@@ -29,7 +40,7 @@ func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetP
 	// get all profiles except the user
 
 	profiles := []models.Profile{}
-	err := p.db.Not("user_id = ?", req.UserId).Find(&profiles).Error
+	err = p.db.Not("user_id = ?", req.UserId).Find(&profiles).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +62,19 @@ func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetP
 }
 
 func (p *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
+	// validate token and get user
+	_, err := p.userService.ValidateAndGetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
+	}
+
 	//validate the field
 	if req.UserId == 0 {
 		return nil, errors.New("user_id is required")
 	}
 
 	profile := models.Profile{}
-	err := p.db.Where("user_id = ?", req.UserId).First(&profile).Error
+	err = p.db.Where("user_id = ?", req.UserId).First(&profile).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("profile not found")
@@ -77,11 +94,13 @@ func (p *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileReque
 }
 
 func (p *ProfileHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRequest) (*pb.CreateProfileResponse, error) {
-	//validate the field
-	if req.UserId == 0 {
-		return nil, errors.New("user_id is required")
+	// validate token and get user
+	user, err := p.userService.ValidateAndGetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
 	}
 
+	//validate the field
 	if req.Age == 0 {
 		return nil, errors.New("age is required")
 	}
@@ -92,13 +111,13 @@ func (p *ProfileHandler) CreateProfile(ctx context.Context, req *pb.CreateProfil
 
 	// create new profile
 	profile := models.Profile{
-		UserID: uint(req.UserId),
+		UserID: uint(user.ID),
 		Age:    int(req.Age),
 		Bio:    req.Bio,
 		Photos: req.Photos,
 	}
 
-	err := p.db.Create(&profile).Error
+	err = p.db.Create(&profile).Error
 	if err != nil {
 		return nil, err
 	}
@@ -116,11 +135,13 @@ func (p *ProfileHandler) CreateProfile(ctx context.Context, req *pb.CreateProfil
 }
 
 func (p *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
-	//validate the field
-	if req.UserId == 0 {
-		return nil, errors.New("user_id is required")
+	// validate token and get user
+	user, err := p.userService.ValidateAndGetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
 	}
 
+	//validate the field
 	if req.Age == 0 {
 		return nil, errors.New("age is required")
 	}
@@ -131,13 +152,13 @@ func (p *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
 
 	// create new profile
 	profile := models.Profile{
-		UserID: uint(req.UserId),
+		UserID: uint(user.ID),
 		Age:    int(req.Age),
 		Bio:    req.Bio,
 		Photos: req.Photos,
 	}
 
-	err := p.db.Model(&models.Profile{}).Where("user_id = ?", req.UserId).Updates(&profile).Error
+	err = p.db.Model(&models.Profile{}).Where("user_id = ?", req.UserId).Updates(&profile).Error
 	if err != nil {
 		return nil, err
 	}
@@ -155,12 +176,18 @@ func (p *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
 }
 
 func (p *ProfileHandler) DeleteProfile(ctx context.Context, req *pb.DeleteProfileRequest) (*pb.DeleteProfileResponse, error) {
+	// validate token and get user
+	_, err := p.userService.ValidateAndGetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
+	}
+
 	//validate the field
 	if req.UserId == 0 {
 		return nil, errors.New("user_id is required")
 	}
 
-	err := p.db.Where("user_id = ?", req.UserId).Delete(&models.Profile{}).Error
+	err = p.db.Where("user_id = ?", req.UserId).Delete(&models.Profile{}).Error
 	if err != nil {
 		return nil, err
 	}

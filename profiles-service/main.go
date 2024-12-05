@@ -8,6 +8,7 @@ import (
 	"profiles-service/configs"
 	"profiles-service/handlers"
 	pb "profiles-service/pb/generated"
+	"profiles-service/services"
 
 	"google.golang.org/grpc"
 )
@@ -16,7 +17,8 @@ func main() {
 	db := configs.CreateDBInstance()
 
 	//instantiate services
-	profileHandler := handlers.NewProfileHandler(db)
+	userService := services.NewUserService(db)
+	profileHandler := handlers.NewProfileHandler(db, userService)
 
 	grpcServer := grpc.NewServer()
 
