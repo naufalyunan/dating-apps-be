@@ -47,7 +47,7 @@ func (is *invoiceService) generateInvoiceDesc(
 	forUserSub *models.UserSubscription,
 	forPayment *models.Payment,
 ) string {
-	return fmt.Sprintf("Subscription payment for user with ID %s  and email %d", forUser.Email, forUserSub.UserID)
+	return fmt.Sprintf("Subscription payment for user with ID %s  and email %d", forUserSub.UserID, forUser.Email)
 }
 
 func (is *invoiceService) generateInvoiceItems(forUserSub *models.UserSubscription) []map[string]any {
