@@ -29,10 +29,13 @@ func (h *Handlers) HandleCreateProfile(c echo.Context) error {
 }
 
 func (h *Handlers) HandleGetProfile(c echo.Context) error {
-	var req pb.GetProfileRequest
-	err := c.Bind(&req)
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		return utils.NewAppError(http.StatusBadRequest, "invalid request body", err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid user id")
+	}
+	req := pb.GetProfileRequest{
+		UserId: uint32(id),
 	}
 
 	ctx := utils.CreateContext(c)

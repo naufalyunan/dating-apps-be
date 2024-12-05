@@ -212,6 +212,13 @@ func (u *UserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		user.IsVerified = req.IsVerified
 	}
 
+	//check if email is already used by another user and id is not the same
+	var user2 models.User
+	err = u.db.Where("email = ? AND id != ?", req.Email, req.Id).First(&user2).Error
+	if err == nil {
+		return nil, errors.New("email already used by another user")
+	}
+
 	err = u.db.Save(&user).Error
 	if err != nil {
 		return nil, err
