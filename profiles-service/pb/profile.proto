@@ -57,7 +57,7 @@ message CreateProfileResponse {
 
 // Request to get a profile by user ID
 message GetProfileRequest {
-    uint32 user_id = 1;         // User ID whose profile is requested
+    uint32 id = 1;         // User ID whose profile is requested
 }
 
 // Response with profile details
@@ -67,7 +67,7 @@ message GetProfileResponse {
 
 // Request to update a profile
 message UpdateProfileRequest {
-    uint32 user_id = 1;         // User ID associated with the profile
+    uint32 id = 1;         // User ID associated with the profile
     int32 age = 2;              // (Optional) Updated age
     string bio = 3;             // (Optional) Updated bio
     repeated string photos = 4; // (Optional) Updated list of photo URLs
@@ -81,7 +81,7 @@ message UpdateProfileResponse {
 
 // Request to delete a profile by user ID
 message DeleteProfileRequest {
-    uint32 user_id = 1;         // User ID whose profile is to be deleted
+    uint32 id = 1;         // User ID whose profile is to be deleted
 }
 
 // Response after deleting a profile

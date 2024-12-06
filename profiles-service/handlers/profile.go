@@ -69,12 +69,12 @@ func (p *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileReque
 	}
 
 	//validate the field
-	if req.UserId == 0 {
+	if req.Id == 0 {
 		return nil, errors.New("user_id is required")
 	}
 
 	profile := models.Profile{}
-	err = p.db.Where("user_id = ?", req.UserId).First(&profile).Error
+	err = p.db.Where("id = ?", req.Id).First(&profile).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("profile not found")
@@ -158,7 +158,7 @@ func (p *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
 		Photos: req.Photos,
 	}
 
-	err = p.db.Model(&models.Profile{}).Where("user_id = ?", req.UserId).Updates(&profile).Error
+	err = p.db.Model(&models.Profile{}).Where("id = ?", req.Id).Updates(&profile).Error
 	if err != nil {
 		return nil, err
 	}
@@ -183,11 +183,11 @@ func (p *ProfileHandler) DeleteProfile(ctx context.Context, req *pb.DeleteProfil
 	}
 
 	//validate the field
-	if req.UserId == 0 {
+	if req.Id == 0 {
 		return nil, errors.New("user_id is required")
 	}
 
-	err = p.db.Where("user_id = ?", req.UserId).Delete(&models.Profile{}).Error
+	err = p.db.Where("id = ?", req.Id).Delete(&models.Profile{}).Error
 	if err != nil {
 		return nil, err
 	}
