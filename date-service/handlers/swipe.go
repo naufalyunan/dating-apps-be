@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 )
 
@@ -17,16 +19,24 @@ type SwipeHandler struct {
 	pb.UnimplementedSwipeServiceServer
 	db             *gorm.DB
 	profileService services.ProfileService
+	userService    services.UserService
 }
 
-func NewSwipeHandler(db *gorm.DB, profileService services.ProfileService) *SwipeHandler {
+func NewSwipeHandler(db *gorm.DB, profileService services.ProfileService, userService services.UserService) *SwipeHandler {
 	return &SwipeHandler{
 		db:             db,
 		profileService: profileService,
+		userService:    userService,
 	}
 }
 
 func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeRequest) (*pb.RecordSwipeResponse, error) {
+	// validate token and get user
+	_, err := s.userService.ValidateAndGetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
+	}
+
 	//validate requests
 	if req.SwiperUserId == 0 {
 		return nil, errors.New("swiper_user_id is required")
@@ -47,7 +57,7 @@ func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeReque
 
 	//check if user already swiped
 	var swipe models.Swipe
-	err := s.db.Where("swiper_user_id = ? AND swiped_profile_user_id = ?", req.SwiperUserId, req.SwipedProfileUserId).First(&swipe).Error
+	err = s.db.Where("swiper_user_id = ? AND swiped_profile_user_id = ?", req.SwiperUserId, req.SwipedProfileUserId).First(&swipe).Error
 	if err == nil {
 		return nil, errors.New("You have already swiped this profile")
 	}
@@ -98,7 +108,7 @@ func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeReque
 	}
 
 	return &pb.RecordSwipeResponse{
-		Status: fmt.Sprintf("Successfully %s profile with id %d", req.Action, req.SwipedProfileUserId),
+		Status: fmt.Sprintf("Successfully %s profile with user id %d", req.Action, req.SwipedProfileUserId),
 		Swipe:  &pb.SwipeAction{Id: uint32(swipe.ID), SwiperUserId: uint32(swipe.SwiperUserID), SwipedProfileUserId: uint32(swipe.SwipedProfileUserID), Action: swipe.Action},
 	}, nil
 }
@@ -113,6 +123,12 @@ func contains(slice []uint, value uint) bool {
 }
 
 func (s *SwipeHandler) GetSuggestions(ctx context.Context, req *pb.GetSuggestionsRequest) (*pb.GetSuggestionsResponse, error) {
+	// validate token and get user
+	_, err := s.userService.ValidateAndGetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
+	}
+
 	//validate requests
 	if req.UserId == 0 {
 		return nil, errors.New("user_id is required")
@@ -180,7 +196,7 @@ func (s *SwipeHandler) GetSwipeHistory(ctx context.Context, req *pb.GetSwipeHist
 
 	//get all the swipes of the user
 	var swipes []models.Swipe
-	err := s.db.Where("swiper_user_id = ?", req.UserId).Find(&swipes).Error
+	err := s.db.Offset(int(req.Offset)).Limit(int(req.Limit)).Where("swiper_user_id = ?", req.UserId).Find(&swipes).Error
 	if err != nil {
 		return nil, err
 	}

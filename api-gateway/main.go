@@ -52,6 +52,7 @@ func main() {
 	swipes := e.Group("/swipes")
 	swipes.POST("", handler.HandleRecordSwipe)
 	swipes.GET("", handler.HandleGetSuggestions)
+	swipes.GET("/history", handler.HandleSwipeHistory)
 
 	//start server
 	log.Fatal(e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))))

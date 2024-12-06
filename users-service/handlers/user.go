@@ -123,7 +123,7 @@ func (u *UserHandler) IsValidToken(ctx context.Context, req *pb.IsValidTokenRequ
 	if req.Token == "" {
 		return nil, errors.New("token is required")
 	}
-
+	fmt.Printf("Token diterima di user service handler :%s\n", req.Token)
 	key := os.Getenv("JWT_SECRET")
 	token, err := jwt.Parse(req.Token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(key), nil
@@ -132,7 +132,6 @@ func (u *UserHandler) IsValidToken(ctx context.Context, req *pb.IsValidTokenRequ
 	if err != nil {
 		return nil, errors.New("invalid token")
 	}
-
 	if !token.Valid {
 		return nil, fmt.Errorf("invalid token '%v',", token)
 	}

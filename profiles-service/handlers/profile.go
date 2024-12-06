@@ -26,12 +26,6 @@ func NewProfileHandler(db *gorm.DB, userService services.UserService) *ProfileHa
 }
 
 func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetProfilesSuggestionRequest) (*pb.GetProfilesSuggestionResponse, error) {
-	// validate token and get user
-	_, err := p.userService.ValidateAndGetUser(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
-	}
-
 	//validate the field
 	if req.UserId == 0 {
 		return nil, errors.New("user_id is required")
@@ -40,7 +34,7 @@ func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetP
 	// get all profiles except the user
 
 	profiles := []models.Profile{}
-	err = p.db.Not("user_id = ?", req.UserId).Find(&profiles).Error
+	err := p.db.Not("user_id = ?", req.UserId).Find(&profiles).Error
 	if err != nil {
 		return nil, err
 	}

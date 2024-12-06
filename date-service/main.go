@@ -17,8 +17,9 @@ func main() {
 	db := configs.CreateDBInstance()
 
 	//instantiate services
+	userService := services.NewUserService()
 	profileService := services.NewProfileService()
-	swipeHandler := handlers.NewSwipeHandler(db, profileService)
+	swipeHandler := handlers.NewSwipeHandler(db, profileService, userService)
 
 	grpcServer := grpc.NewServer()
 

@@ -146,6 +146,7 @@ func (ps *PaymentServer) rollbackUserSub(userSub *models.UserSubscription) {
 
 // CreateUserSubcription implements pb.SubPaymentServer.
 func (ps *PaymentServer) CreateUserSubcription(c context.Context, req *pb.CreateUserSubcriptionReq) (*pb.CreateUserSubcriptionResp, error) {
+	// validate token and get user
 	err := ps.validateUserSubscriptionData(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid request: %s", err.Error())

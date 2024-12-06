@@ -73,7 +73,7 @@ func extractAuthToken(ctx context.Context) (string, error) {
 	tokens := md["auth_token"]
 	if len(tokens) == 0 {
 		log.Print("auth_token not found in metadata")
-		return "", fmt.Errorf("auth_token not found in metadata")
+		return "", fmt.Errorf("hehehe")
 	}
 
 	log.Printf("auth_token found '%s'", tokens[0])
