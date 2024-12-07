@@ -19,7 +19,8 @@ func main() {
 	//instantiate services
 	userService := services.NewUserService()
 	profileService := services.NewProfileService()
-	swipeHandler := handlers.NewSwipeHandler(db, profileService, userService)
+	logService := services.NewLogService()
+	swipeHandler := handlers.NewSwipeHandler(db, profileService, userService, logService)
 
 	grpcServer := grpc.NewServer()
 

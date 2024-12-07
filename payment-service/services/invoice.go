@@ -53,7 +53,7 @@ func (is *invoiceService) generateInvoiceDesc(
 func (is *invoiceService) generateInvoiceItems(forUserSub *models.UserSubscription) []map[string]any {
 	items := []map[string]any{
 		{
-			"name":     fmt.Sprintf("Breathe.io %s Tier, %d months", forUserSub.Subscription.Tier, forUserSub.Duration),
+			"name":     fmt.Sprintf("Dating Apps %s Tier, %d months", forUserSub.Subscription.Tier, forUserSub.Duration),
 			"quantity": forUserSub.Duration,
 			"price":    float64(forUserSub.Duration) * forUserSub.Subscription.PricePerMonth,
 			"url":      fmt.Sprintf("/user-subscriptions/%d", forUserSub.ID),

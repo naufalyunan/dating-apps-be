@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"payment-service/entities"
 	"payment-service/models"
 	pb "payment-service/pb/generated"
 	"payment-service/services"
@@ -23,11 +25,13 @@ func NewPaymentServer(
 	db *gorm.DB,
 	invoiceService services.InvoiceService,
 	userService services.UserService,
+	logService services.LogService,
 ) *PaymentServer {
 	return &PaymentServer{
 		db:             db,
 		invoiceService: invoiceService,
 		userService:    userService,
+		logService:     logService,
 	}
 }
 
@@ -35,6 +39,7 @@ type PaymentServer struct {
 	db             *gorm.DB
 	invoiceService services.InvoiceService
 	userService    services.UserService
+	logService     services.LogService
 	pb.UnimplementedSubPaymentServer
 }
 
@@ -87,6 +92,15 @@ func (ps *PaymentServer) CompletePayment(c context.Context, req *pb.CompletePaym
 		return nil, status.Errorf(http.StatusInternalServerError, "internal server error: %s", err.Error())
 	}
 
+	_, err = ps.logService.AddLog(entities.ActivityLog{
+		UserID:        uint(payment.UserID),
+		ActionType:    "Paid Invoice",
+		ActionDetails: fmt.Sprintf("User %d Paid Invoice with ID %d", payment.UserID, payment.ID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	// get user
 	user, err := ps.userService.GetUserByID(payment.UserID)
 	if err != nil {
@@ -97,6 +111,15 @@ func (ps *PaymentServer) CompletePayment(c context.Context, req *pb.CompletePaym
 	_, err = ps.userService.UpdateUser(user)
 	if err != nil {
 		return nil, status.Errorf(http.StatusInternalServerError, "failed to update user tier %s", err.Error())
+	}
+
+	_, err = ps.logService.AddLog(entities.ActivityLog{
+		UserID:        uint(payment.UserID),
+		ActionType:    "Update User Tier",
+		ActionDetails: fmt.Sprintf("Succes Updating User %d Tier", payment.UserID),
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.CompletePaymentResp{
@@ -206,6 +229,15 @@ func (ps *PaymentServer) CreateUserSubcription(c context.Context, req *pb.Create
 	if err != nil {
 		ps.rollbackUserSub(newUserSub)
 		return nil, status.Errorf(codes.Internal, "failed to update payment invoice: %s", err.Error())
+	}
+
+	_, err = ps.logService.AddLog(entities.ActivityLog{
+		UserID:        uint(newPayment.UserID),
+		ActionType:    "Creating Invoice",
+		ActionDetails: fmt.Sprintf("Succes Creating Invoice for User %d with Payment ID %d", newPayment.UserID, newPayment.ID),
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.CreateUserSubcriptionResp{

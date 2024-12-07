@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
+	"profiles-service/entities"
 	"profiles-service/models"
 	pb "profiles-service/pb/generated"
 	"profiles-service/services"
@@ -16,12 +18,14 @@ type ProfileHandler struct {
 	pb.UnimplementedProfileServiceServer
 	db          *gorm.DB
 	userService services.UserService
+	logService  services.LogService
 }
 
-func NewProfileHandler(db *gorm.DB, userService services.UserService) *ProfileHandler {
+func NewProfileHandler(db *gorm.DB, userService services.UserService, logService services.LogService) *ProfileHandler {
 	return &ProfileHandler{
 		db:          db,
 		userService: userService,
+		logService:  logService,
 	}
 }
 
@@ -57,14 +61,14 @@ func (p *ProfileHandler) GetProfilesSuggestion(ctx context.Context, req *pb.GetP
 
 func (p *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
 	// validate token and get user
-	_, err := p.userService.ValidateAndGetUser(ctx)
+	user, err := p.userService.ValidateAndGetUser(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
 	}
 
 	//validate the field
 	if req.Id == 0 {
-		return nil, errors.New("user_id is required")
+		return nil, errors.New("id is required")
 	}
 
 	profile := models.Profile{}
@@ -73,6 +77,15 @@ func (p *ProfileHandler) GetProfile(ctx context.Context, req *pb.GetProfileReque
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("profile not found")
 		}
+		return nil, err
+	}
+
+	_, err = p.logService.AddLog(entities.ActivityLog{
+		UserID:        user.ID,
+		ActionType:    "Get Profile",
+		ActionDetails: fmt.Sprintf("User %s Getting Profile with Profile ID %d", user.Username, profile.ID),
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -116,6 +129,15 @@ func (p *ProfileHandler) CreateProfile(ctx context.Context, req *pb.CreateProfil
 		return nil, err
 	}
 
+	_, err = p.logService.AddLog(entities.ActivityLog{
+		UserID:        user.ID,
+		ActionType:    "Create Profile",
+		ActionDetails: fmt.Sprintf("User %s Creating Profile with ID %d", user.Username, profile.ID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.CreateProfileResponse{
 		Status: "Successfully created profile",
 		Profile: &pb.Profile{
@@ -144,15 +166,35 @@ func (p *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
 		return nil, errors.New("bio is required")
 	}
 
-	// create new profile
-	profile := models.Profile{
+	//check if the profile exists
+	profile := models.Profile{}
+	err = p.db.Where("id = ?", req.Id).First(&profile).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("profile not found")
+		}
+		return nil, err
+	}
+
+	// create updated new profile
+
+	toUpdate := models.Profile{
 		UserID: uint(user.ID),
 		Age:    int(req.Age),
 		Bio:    req.Bio,
 		Photos: req.Photos,
 	}
 
-	err = p.db.Model(&models.Profile{}).Where("id = ?", req.Id).Updates(&profile).Error
+	err = p.db.Model(&models.Profile{}).Where("id = ?", req.Id).Updates(&toUpdate).Error
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.logService.AddLog(entities.ActivityLog{
+		UserID:        user.ID,
+		ActionType:    "Update Profile",
+		ActionDetails: fmt.Sprintf("User %s Updating Profile with ID %d", user.Username, profile.ID),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -171,17 +213,26 @@ func (p *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
 
 func (p *ProfileHandler) DeleteProfile(ctx context.Context, req *pb.DeleteProfileRequest) (*pb.DeleteProfileResponse, error) {
 	// validate token and get user
-	_, err := p.userService.ValidateAndGetUser(ctx)
+	user, err := p.userService.ValidateAndGetUser(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
 	}
 
 	//validate the field
 	if req.Id == 0 {
-		return nil, errors.New("user_id is required")
+		return nil, errors.New("id is required")
 	}
 
 	err = p.db.Where("id = ?", req.Id).Delete(&models.Profile{}).Error
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.logService.AddLog(entities.ActivityLog{
+		UserID:        user.ID,
+		ActionType:    "Delete Profile",
+		ActionDetails: fmt.Sprintf("User %s Deleting Profile with ID %d", user.Username, req.Id),
+	})
 	if err != nil {
 		return nil, err
 	}

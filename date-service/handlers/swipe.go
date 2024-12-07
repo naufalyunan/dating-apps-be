@@ -20,13 +20,15 @@ type SwipeHandler struct {
 	db             *gorm.DB
 	profileService services.ProfileService
 	userService    services.UserService
+	logService     services.LogService
 }
 
-func NewSwipeHandler(db *gorm.DB, profileService services.ProfileService, userService services.UserService) *SwipeHandler {
+func NewSwipeHandler(db *gorm.DB, profileService services.ProfileService, userService services.UserService, logService services.LogService) *SwipeHandler {
 	return &SwipeHandler{
 		db:             db,
 		profileService: profileService,
 		userService:    userService,
+		logService:     logService,
 	}
 }
 
@@ -87,6 +89,15 @@ func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeReque
 		return nil, err
 	}
 
+	_, err = s.logService.AddLog(entities.ActivityLog{
+		UserID:        uint(req.SwiperUserId),
+		ActionType:    "Swipe",
+		ActionDetails: fmt.Sprintf("User %d swipe user %d with action %s", swipe.SwiperUserID, swipe.SwipedProfileUserID, swipe.Action),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	// Check for a match if the swipe action is "like"
 	if req.Action == "like" {
 		var reverseSwipe models.Swipe
@@ -98,6 +109,15 @@ func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeReque
 				User2ID: uint(req.SwipedProfileUserId),
 			}
 			err = s.db.Create(&match).Error
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = s.logService.AddLog(entities.ActivityLog{
+				UserID:        swipe.SwiperUserID,
+				ActionType:    "Found Match",
+				ActionDetails: fmt.Sprintf("Found Match beteween user %d and user %d", req.SwiperUserId, req.SwipedProfileUserId),
+			})
 			if err != nil {
 				return nil, err
 			}

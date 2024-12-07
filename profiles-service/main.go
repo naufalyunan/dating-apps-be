@@ -17,8 +17,9 @@ func main() {
 	db := configs.CreateDBInstance()
 
 	//instantiate services
-	userService := services.NewUserService(db)
-	profileHandler := handlers.NewProfileHandler(db, userService)
+	logService := services.NewLogService()
+	userService := services.NewUserService()
+	profileHandler := handlers.NewProfileHandler(db, userService, logService)
 
 	grpcServer := grpc.NewServer()
 

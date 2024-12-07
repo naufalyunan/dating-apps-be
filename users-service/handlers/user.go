@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"users-service/entities"
 	"users-service/models"
 	pb "users-service/pb/generated"
+	"users-service/services"
 	"users-service/utils"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,12 +17,14 @@ import (
 
 type UserHandler struct {
 	pb.UnimplementedUserServiceServer
-	db *gorm.DB
+	db         *gorm.DB
+	logService services.LogService
 }
 
-func NewUserHandler(db *gorm.DB) *UserHandler {
+func NewUserHandler(db *gorm.DB, logService services.LogService) *UserHandler {
 	return &UserHandler{
-		db: db,
+		db:         db,
+		logService: logService,
 	}
 }
 
@@ -54,6 +58,15 @@ func (u *UserHandler) Register(ctx context.Context, req *pb.CreateUserRequest) (
 	}
 
 	err = u.db.Create(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = u.logService.AddLog(entities.ActivityLog{
+		UserID:        user.ID,
+		ActionType:    "Register",
+		ActionDetails: fmt.Sprintf("User %s registered", user.Username),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +116,15 @@ func (u *UserHandler) Login(ctx context.Context, req *pb.LoginUserRequest) (*pb.
 	s, err := t.SignedString([]byte(key))
 	if err != nil {
 		return nil, errors.New("failed to sign token")
+	}
+
+	_, err = u.logService.AddLog(entities.ActivityLog{
+		UserID:        user.ID,
+		ActionType:    "Login",
+		ActionDetails: fmt.Sprintf("User %s Login succesfully", user.Username),
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.LoginUserResponse{

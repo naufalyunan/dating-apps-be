@@ -7,10 +7,10 @@ import (
 	"log"
 	"os"
 	"profiles-service/entities"
+	pb "profiles-service/pb/generated"
 
-	"github.com/golang-jwt/jwt/v5"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"gorm.io/gorm"
 )
 
 type UserService interface {
@@ -18,14 +18,37 @@ type UserService interface {
 	ValidateAndGetUser(c context.Context) (*entities.User, error)
 }
 
-func NewUserService(db *gorm.DB) UserService {
+func NewUserClient() pb.UserServiceClient {
+	addr := os.Getenv("USER_SERVICE_ADDR")
+
+	// opts := []grpc.DialOption{}
+	// systemRoots, err := x509.SystemCertPool()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// cred := credentials.NewTLS(&tls.Config{
+	// 	RootCAs: systemRoots,
+	// })
+	// opts = append(opts, grpc.WithTransportCredentials(cred))
+	// conn, err := grpc.NewClient(addr, opts...)
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client := pb.NewUserServiceClient(conn)
+
+	return client
+}
+
+func NewUserService() UserService {
 	return &userService{
-		db: db,
+		userClient: NewUserClient(),
 	}
 }
 
 type userService struct {
-	db *gorm.DB
+	userClient pb.UserServiceClient
 }
 
 func (u *userService) IsValidToken(token string) (*entities.User, error) {
@@ -34,31 +57,20 @@ func (u *userService) IsValidToken(token string) (*entities.User, error) {
 		return nil, errors.New("token is required")
 	}
 
-	//validate token
-	key := os.Getenv("JWT_SECRET")
-	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		return []byte(key), nil
+	res, err := u.userClient.IsValidToken(context.TODO(), &pb.IsValidTokenRequest{
+		Token: token,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("invalid token '%s',", key)
+		return nil, err
 	}
 
-	if !t.Valid {
-		return nil, fmt.Errorf("invalid token '%v',", t)
-	}
-
-	var user entities.User
-	claims, ok := t.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, errors.New("invalid token, invalid claims")
-	}
-
-	err = u.db.Where("email = ?", claims["email"]).First(&user).Error
-	if err != nil {
-		return nil, errors.New("user not found")
-	}
-
-	return &user, nil
+	return &entities.User{
+		ID:         uint(res.User.Id),
+		Email:      res.User.Email,
+		Username:   res.User.Username,
+		IsPremium:  res.User.IsPremium,
+		IsVerified: res.User.IsVerified,
+	}, nil
 }
 
 func extractAuthToken(ctx context.Context) (string, error) {
@@ -68,7 +80,6 @@ func extractAuthToken(ctx context.Context) (string, error) {
 		log.Print("no metadata found in context")
 		return "", fmt.Errorf("no metadata found in context")
 	}
-
 	// Check if 'auth_token' exists in the metadata
 	tokens := md["auth_token"]
 	if len(tokens) == 0 {

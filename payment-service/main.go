@@ -19,12 +19,14 @@ func main() {
 	// instantiate services
 	invoiceService := services.NewInvoiceService()
 	userService := services.NewUserService()
+	logService := services.NewLogService()
 
 	// subs-payments grpc server handler
 	paymentServer := server.NewPaymentServer(
 		db,
 		invoiceService,
 		userService,
+		logService,
 	)
 
 	opts := []grpc.ServerOption{
