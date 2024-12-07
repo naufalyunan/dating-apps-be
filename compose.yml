@@ -1,6 +1,8 @@
 version: "3"
+networks:
+  dating-network:
 services:
-  api_gateway:
+  api-gateway:
     build: ./api-gateway
     ports:
       - "8080:8080"
@@ -8,19 +10,21 @@ services:
       - DATE_SERVICE_URL=date-service:50003
       - LOGS_SERVICE_URL=logs-service:50002
       - PAYMENT_SERVICE_URL=payment-service:50005
-      - PROFILES_SERVICE_URL=profiles-service:50004
-      - USERS_SERVICE_URL=users-service:50001
+      - PROFILE_SERVICE_URL=profiles-service:50004
+      - USER_SERVICE_URL=users-service:50001
     depends_on:
-      - date_service
-      - users_service
-      - payment_service
-      - profiles_service
+      - date-service
+      - users-service
+      - payment-service
+      - profiles-service
+    networks:
+      - dating-network
 
-  users_service:
+  users-service:
     build: ./users-service
     container_name: users-service
-    expose:
-      - 50001
+    ports:
+      - "50001:50001"
     env_file:
       - ./users-service/.env
     environment:
@@ -30,23 +34,27 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - logs_service
+      - logs-service
+    networks:
+      - dating-network
 
-  logs_service:
+  logs-service:
     build: ./logs-service
     container_name: logs-service
-    expose:
-      - 50002
+    ports:
+      - "50002:50002"
     env_file:
       - ./logs-service/.env
     environment:
       - DB_HOST=host.docker.internal
+    networks:
+      - dating-network
 
-  profiles_service:
+  profiles-service:
     build: ./profiles-service
     container_name: profiles-service
-    expose:
-      - 50004
+    ports:
+      - "50004:50004"
     env_file:
       - ./profiles-service/.env
     environment:
@@ -56,12 +64,14 @@ services:
       - PORT=50004
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - dating-network
 
-  payment_service:
+  payment-service:
     build: ./payment-service
     container_name: payment-service
-    expose:
-      - 50005
+    ports:
+      - "50005:50005"
     env_file:
       - ./payment-service/.env
     environment:
@@ -72,20 +82,24 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - user_service
+      - users-service
+    networks:
+      - dating-network
 
-  date_service:
+  date-service:
     build: ./date-service
     container_name: date-service
-    expose:
-      - 50003
+    ports:
+      - "50003:50003"
     env_file:
       - ./date-service/.env
     environment:
       - DB_HOST=host.docker.internal
       - PROFILE_SERVICE_ADDR=profiles-service:50004
-      - USER_SERVICE_ADDR=user-service:50001
+      - USER_SERVICE_ADDR=users-service:50001
       - LOG_SERVICE_ADDR=logs-service:50002
       - PORT=50003
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - dating-network
