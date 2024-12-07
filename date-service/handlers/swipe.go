@@ -34,7 +34,7 @@ func NewSwipeHandler(db *gorm.DB, profileService services.ProfileService, userSe
 
 func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeRequest) (*pb.RecordSwipeResponse, error) {
 	// validate token and get user
-	_, err := s.userService.ValidateAndGetUser(ctx)
+	user, err := s.userService.ValidateAndGetUser(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "invalid token '%s'", err.Error())
 	}
@@ -64,17 +64,20 @@ func (s *SwipeHandler) RecordSwipe(ctx context.Context, req *pb.RecordSwipeReque
 		return nil, errors.New("You have already swiped this profile")
 	}
 
-	//check if it is already swiping 10 times in history for 24 hours, if it is then return Error
-	timeLimit := time.Now().Add(-24 * time.Hour)
+	if !user.IsPremium {
+		//check if it is already swiping 10 times in history for 24 hours, if it is then return Error
+		timeLimit := time.Now().Add(-24 * time.Hour)
 
-	var swipes []models.Swipe
-	err = s.db.Where("swiper_user_id = ? AND created_at > ?", req.SwiperUserId, timeLimit).Find(&swipes).Error
-	if err != nil {
-		return nil, err
-	}
+		var swipes []models.Swipe
+		err = s.db.Where("swiper_user_id = ? AND created_at > ?", req.SwiperUserId, timeLimit).Find(&swipes).Error
+		if err != nil {
+			return nil, err
+		}
 
-	if len(swipes) >= 10 {
-		return nil, errors.New("You have reached the limit of swiping 10 times in 24 hours")
+		//revise the code below, if it is premium user, it can unlimited swipe
+		if len(swipes) >= 10 {
+			return nil, errors.New("You have reached the limit of swiping 10 times in 24 hours")
+		}
 	}
 
 	// create new swipe
@@ -212,6 +215,15 @@ func (s *SwipeHandler) GetSwipeHistory(ctx context.Context, req *pb.GetSwipeHist
 	//validate requests
 	if req.UserId == 0 {
 		return nil, errors.New("user_id is required")
+	}
+
+	//use default limit and offset if not provided
+	if req.Limit == 0 {
+		req.Limit = 20
+	}
+
+	if req.Offset == 0 {
+		req.Offset = 0
 	}
 
 	//get all the swipes of the user

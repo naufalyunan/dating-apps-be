@@ -86,7 +86,7 @@ func (h *Handlers) HandleSwipeHistory(c echo.Context) error {
 		}
 		req.Limit = uint32(l)
 	} else {
-		req.Limit = 2
+		req.Limit = 0
 	}
 
 	offset := c.QueryParam("offset")
