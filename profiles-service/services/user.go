@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"log"
@@ -10,6 +12,7 @@ import (
 	pb "profiles-service/pb/generated"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -21,17 +24,17 @@ type UserService interface {
 func NewUserClient() pb.UserServiceClient {
 	addr := os.Getenv("USER_SERVICE_ADDR")
 
-	// opts := []grpc.DialOption{}
-	// systemRoots, err := x509.SystemCertPool()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// cred := credentials.NewTLS(&tls.Config{
-	// 	RootCAs: systemRoots,
-	// })
-	// opts = append(opts, grpc.WithTransportCredentials(cred))
-	// conn, err := grpc.NewClient(addr, opts...)
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	opts := []grpc.DialOption{}
+	systemRoots, err := x509.SystemCertPool()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cred := credentials.NewTLS(&tls.Config{
+		RootCAs: systemRoots,
+	})
+	opts = append(opts, grpc.WithTransportCredentials(cred))
+	conn, err := grpc.NewClient(addr, opts...)
+	// conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatal(err)
 	}

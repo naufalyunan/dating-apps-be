@@ -2,12 +2,15 @@ package services
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
 	"os"
 	pb "payment-service/pb/generated"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -23,17 +26,17 @@ func NewUserClient() pb.UserServiceClient {
 	addr := os.Getenv("USER_SERVICE_ADDR")
 	log.Printf("user service url: %s", addr)
 	// Set up a connection to the server.
-	// opts := []grpc.DialOption{}
-	// systemRoots, err := x509.SystemCertPool()
-	// if err != nil {
-	// 	log.Fatalf("filed to get certs: %v", err)
-	// }
-	// cred := credentials.NewTLS(&tls.Config{
-	// 	RootCAs: systemRoots,
-	// })
-	// opts = append(opts, grpc.WithTransportCredentials(cred))
-	// conn, err := grpc.NewClient(addr, opts...)
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	opts := []grpc.DialOption{}
+	systemRoots, err := x509.SystemCertPool()
+	if err != nil {
+		log.Fatalf("filed to get certs: %v", err)
+	}
+	cred := credentials.NewTLS(&tls.Config{
+		RootCAs: systemRoots,
+	})
+	opts = append(opts, grpc.WithTransportCredentials(cred))
+	conn, err := grpc.NewClient(addr, opts...)
+	// conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

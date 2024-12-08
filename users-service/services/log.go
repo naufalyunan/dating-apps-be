@@ -2,12 +2,15 @@ package services
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"log"
 	"os"
 	"users-service/entities"
 	pb "users-service/pb/generated"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type LogService interface {
@@ -17,17 +20,17 @@ type LogService interface {
 func NewLogClient() pb.LogServiceClient {
 	addr := os.Getenv("LOG_SERVICE_ADDR")
 
-	// opts := []grpc.DialOption{}
-	// systemRoots, err := x509.SystemCertPool()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// cred := credentials.NewTLS(&tls.Config{
-	// 	RootCAs: systemRoots,
-	// })
-	// opts = append(opts, grpc.WithTransportCredentials(cred))
-	// conn, err := grpc.NewClient(addr, opts...)
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	opts := []grpc.DialOption{}
+	systemRoots, err := x509.SystemCertPool()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cred := credentials.NewTLS(&tls.Config{
+		RootCAs: systemRoots,
+	})
+	opts = append(opts, grpc.WithTransportCredentials(cred))
+	conn, err := grpc.NewClient(addr, opts...)
+	// conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatal(err)
 	}
