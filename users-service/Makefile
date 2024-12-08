@@ -4,7 +4,7 @@ PROJECT_ID=date-apps-444103
 SERVICE_NAME=users-service
 IMAGE_NAME=gcr.io/$(PROJECT_ID)/$(SERVICE_NAME)
 DB_HOST=junction.proxy.rlwy.net
-LOG_SERVICE_ADDR=https://logs-service-611320088750.asia-southeast2.run.app:443
+LOG_SERVICE_ADDR=logs-service-611320088750.asia-southeast2.run.app:443
 
 protoc:
 	protoc --proto_path=pb pb/*.proto --go_out=paths=source_relative:pb/generated --go-grpc_out=paths=source_relative:pb/generated

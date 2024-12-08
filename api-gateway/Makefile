@@ -3,10 +3,10 @@ include .env
 PROJECT_ID=date-apps-444103
 SERVICE_NAME=api-gateway
 IMAGE_NAME=gcr.io/$(PROJECT_ID)/$(SERVICE_NAME)
-PAYMENT_SERVICE_URL=https://payment-service-611320088750.asia-southeast2.run.app:443
-USER_SERVICE_URL=https://users-service-611320088750.asia-southeast2.run.app:443
-DATE_SERVICE_URL=https://date-service-611320088750.asia-southeast2.run.app:443
-PROFILE_SERVICE_URL=https://profiles-service-611320088750.asia-southeast2.run.app:443
+PAYMENT_SERVICE_URL=payment-service-611320088750.asia-southeast2.run.app:443
+USER_SERVICE_URL=users-service-611320088750.asia-southeast2.run.app:443
+DATE_SERVICE_URL=date-service-611320088750.asia-southeast2.run.app:443
+PROFILE_SERVICE_URL=profiles-service-611320088750.asia-southeast2.run.app:443
 
 protoc:
 	protoc --proto_path=pb pb/*.proto --go_out=paths=source_relative:pb/generated --go-grpc_out=paths=source_relative:pb/generated
