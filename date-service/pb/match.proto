@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package match;
+
+option go_package = "/proto/pb";
+
+// The Match service definition
+service MatchService {
+    // Check if two users have a match
+    rpc CheckMatch(CheckMatchRequest) returns (CheckMatchResponse);
+
+    // Get all matches for a user
+    rpc GetMatches(GetMatchesRequest) returns (GetMatchesResponse);
+
+    // Stream matches in real-time for a user
+    rpc StreamMatches(StreamMatchesRequest) returns (stream StreamMatchesResponse);
+}
+
+// Message to define a match
+message Match {
+    string id = 1;           // Unique identifier for the match
+    uint32 user1_id = 2;     // ID of the first user in the match
+    uint32 user2_id = 3;     // ID of the second user in the match
+    string matched_at = 4;   // Timestamp when the match occurred
+}
+
+// Request to check if two users have a match
+message CheckMatchRequest {
+    uint32 user1_id = 1;     // ID of the first user
+    uint32 user2_id = 2;     // ID of the second user
+}
+
+// Response to indicate if a match exists
+message CheckMatchResponse {
+    bool is_match = 1;       // True if the users have a match, false otherwise
+    Match match = 2;         // The match details, if available
+}
+
+// Request to get all matches for a specific user
+message GetMatchesRequest {
+    uint32 user_id = 1;      // User ID for whom matches are requested
+    uint32 limit = 2;        // Number of matches to retrieve
+    uint32 offset = 3;       // Pagination offset
+}
+
+// Response with a list of matches
+message GetMatchesResponse {
+    repeated Match matches = 1; // List of matches for the user
+}
+
+// Request to stream matches in real-time
+message StreamMatchesRequest {
+    uint32 user_id = 1;      // User ID for whom to stream matches
+}
+
+// Real-time match stream response
+message StreamMatchesResponse {
+    Match match = 1;         // A single match streamed in real-time
+}

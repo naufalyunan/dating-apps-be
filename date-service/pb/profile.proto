@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package profile;
+
+option go_package = "/proto/pb";
+
+// The Profile service definition
+service ProfileService {
+    //Get All Profiles
+    rpc GetProfilesSuggestion(GetProfilesSuggestionRequest) returns (GetProfilesSuggestionResponse);
+
+    // Create a new profile for a user
+    rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
+
+    // Get a profile by user ID
+    rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+
+    // Update a profile for a user
+    rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+    // Delete a profile by user ID
+    rpc DeleteProfile(DeleteProfileRequest) returns (DeleteProfileResponse);
+}
+
+// Message to define a user profile
+message Profile {
+    uint32 id = 1;              // Unique identifier for the profile
+    uint32 user_id = 2;         // User ID associated with the profile
+    int32 age = 3;              // Age of the user
+    string bio = 4;             // Short bio of the user
+    repeated string photos = 5; // List of photo URLs
+}
+
+//Request to get profiles suggestions
+message GetProfilesSuggestionRequest {
+    uint32 user_id = 1;         // User ID to get suggestions for
+}
+
+// Response to get all profiles
+message GetProfilesSuggestionResponse {
+    repeated Profile profiles = 1; // List of profiles
+}
+
+// Request to create a new profile
+message CreateProfileRequest {
+    uint32 user_id = 1;         // User ID associated with the profile
+    int32 age = 2;              // Age of the user
+    string bio = 3;             // Short bio of the user
+    repeated string photos = 4; // List of photo URLs
+}
+
+// Response after creating a profile
+message CreateProfileResponse {
+    string status = 1;          // Status message (e.g., "Profile created successfully")
+    Profile profile = 2;        // The created profile
+}
+
+// Request to get a profile by user ID
+message GetProfileRequest {
+    uint32 user_id = 1;         // User ID whose profile is requested
+}
+
+// Response with profile details
+message GetProfileResponse {
+    Profile profile = 1;        // The profile details
+}
+
+// Request to update a profile
+message UpdateProfileRequest {
+    uint32 user_id = 1;         // User ID associated with the profile
+    int32 age = 2;              // (Optional) Updated age
+    string bio = 3;             // (Optional) Updated bio
+    repeated string photos = 4; // (Optional) Updated list of photo URLs
+}
+
+// Response after updating a profile
+message UpdateProfileResponse {
+    string status = 1;          // Status message (e.g., "Profile updated successfully")
+    Profile profile = 2;        // The updated profile
+}
+
+// Request to delete a profile by user ID
+message DeleteProfileRequest {
+    uint32 user_id = 1;         // User ID whose profile is to be deleted
+}
+
+// Response after deleting a profile
+message DeleteProfileResponse {
+    string status = 1;          // Status message (e.g., "
+}

@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package swipe;
+
+
+option go_package = "/proto/pb";
+
+// The Swipe service definition
+service SwipeService {
+    // Record a swipe action (like or pass)
+    rpc RecordSwipe(RecordSwipeRequest) returns (RecordSwipeResponse);
+
+    // Get a list of suggested profiles for the user
+    rpc GetSuggestions(GetSuggestionsRequest) returns (GetSuggestionsResponse);
+
+    // Retrieve swipe history for a user
+    rpc GetSwipeHistory(GetSwipeHistoryRequest) returns (GetSwipeHistoryResponse);
+}
+
+// Message to define a swipe action
+message SwipeAction {
+    uint32 id = 1;              // Unique identifier for the swipe
+    uint32 swiper_user_id = 2;       // User ID of the swiper
+    uint32 swiped_profile_user_id = 3; // User ID of the profile being swiped
+    string action = 4;          // Swipe action: 'like' or 'pass'
+}
+
+// Request to record a swipe action
+message RecordSwipeRequest {
+    uint32 swiper_user_id = 1;       // User ID of the swiper
+    uint32 swiped_profile_user_id = 2; // User ID of the profile being swiped
+    string action = 3;          // Swipe action: 'like' or 'pass'
+}
+
+// Response after recording a swipe action
+message RecordSwipeResponse {
+    string status = 1;          // Status message (e.g., "Swipe recorded successfully")
+    SwipeAction swipe = 2;      // The recorded swipe action
+}
+
+// Request to get profile suggestions
+message GetSuggestionsRequest {
+    uint32 user_id = 1;         // User ID of the user requesting suggestions
+    uint32 limit = 2;           // Number of profiles to suggest
+}
+
+// Response with a list of suggested profiles
+message GetSuggestionsResponse {
+    repeated ProfileShow profiles = 1; // List of suggested profiles
+}
+
+// Message to define a user profile
+message ProfileShow {
+    uint32 id = 1;              // Unique identifier for the profile
+    uint32 user_id = 2;        // User ID of the profile
+    int32 age = 3;              // Age of the profile
+    string bio = 4;             // Bio of the profile
+    repeated string photos = 5; // URLs of profile photos
+}
+
+// Request to get swipe history
+message GetSwipeHistoryRequest {
+    uint32 user_id = 1;         // User ID for whom swipe history is requested
+    uint32 limit = 2;           // Number of history records to fetch
+    uint32 offset = 3;          // Pagination offset
+}
+
+// Response with a list of swipe actions
+message GetSwipeHistoryResponse {
+    repeated SwipeAction swipes = 1; // List of swipe actions
+}

@@ -1,0 +1,60 @@
+syntax = "proto3";
+package logs_grpc;
+
+option go_package = "/proto/pb";
+
+// The log service definition
+service LogService {
+    // Add a new activity log
+    rpc AddLog (AddLogRequest) returns (AddLogResponse);
+
+    // Get activity logs for a specific user
+    rpc GetLogs (GetLogsRequest) returns (GetLogsResponse);
+
+    // Stream activity logs in real-time
+    rpc StreamLogs (StreamLogsRequest) returns (stream StreamLogsResponse);
+}
+
+// Message to define an activity log entry
+message LogEntry {
+    uint32 id = 1;          // Unique identifier for the log
+    uint32 user_id = 2;     // User ID associated with the action
+    string action_type = 3; // Type of action (e.g., "swipe", "purchase")
+    string details = 4;     // Additional details about the action
+    string timestamp = 5;   // Timestamp of when the action occurred
+}
+
+// Request to add a log
+message AddLogRequest {
+    uint32 user_id = 1;     // User ID associated with the action
+    string action_type = 2; // Type of action (e.g., "swipe", "purchase")
+    string details = 3;     // Additional details about the action
+}
+
+// Response after adding a log
+message AddLogResponse {
+    string status = 1;      // Status message (e.g., "Log added successfully")
+    LogEntry log_entry = 2; // The log entry that was added
+}
+
+// Request to fetch logs for a specific user
+message GetLogsRequest {
+    uint32 user_id = 1;     // User ID for which logs are requested
+    uint32 limit = 2;       // Number of logs to fetch
+    uint32 offset = 3;      // Pagination offset
+}
+
+// Response containing a list of logs
+message GetLogsResponse {
+    repeated LogEntry logs = 1; // List of activity logs
+}
+
+// Request to stream logs in real-time
+message StreamLogsRequest {
+    uint32 user_id = 1;     // User ID for whom to stream logs (optional)
+}
+
+// Real-time log stream response
+message StreamLogsResponse {
+    LogEntry log_entry = 1; // A single log entry sent in real-time
+}

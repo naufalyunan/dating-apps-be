@@ -1,0 +1,105 @@
+version: "3"
+networks:
+  dating-network:
+services:
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - DATE_SERVICE_URL=date-service:50003
+      - LOGS_SERVICE_URL=logs-service:50002
+      - PAYMENT_SERVICE_URL=payment-service:50005
+      - PROFILE_SERVICE_URL=profiles-service:50004
+      - USER_SERVICE_URL=users-service:50001
+    depends_on:
+      - date-service
+      - users-service
+      - payment-service
+      - profiles-service
+    networks:
+      - dating-network
+
+  users-service:
+    build: ./users-service
+    container_name: users-service
+    ports:
+      - "50001:50001"
+    env_file:
+      - ./users-service/.env
+    environment:
+      - DB_HOST=host.docker.internal
+      - LOG_SERVICE_ADDR=logs-service:50002
+      - JWT_SECRET=secret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - logs-service
+    networks:
+      - dating-network
+
+  logs-service:
+    build: ./logs-service
+    container_name: logs-service
+    ports:
+      - "50002:50002"
+    env_file:
+      - ./logs-service/.env
+    environment:
+      - DB_HOST=host.docker.internal
+    networks:
+      - dating-network
+
+  profiles-service:
+    build: ./profiles-service
+    container_name: profiles-service
+    ports:
+      - "50004:50004"
+    env_file:
+      - ./profiles-service/.env
+    environment:
+      - DB_HOST=host.docker.internal
+      - USER_SERVICE_ADDR=users-service:50001
+      - LOG_SERVICE_ADDR=logs-service:50002
+      - PORT=50004
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - dating-network
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "50005:50005"
+    env_file:
+      - ./payment-service/.env
+    environment:
+      - DB_HOST=host.docker.internal
+      - USER_SERVICE_ADDR=users-service:50001
+      - LOG_SERVICE_ADDR=logs-service:50002
+      - PORT=50005
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - users-service
+    networks:
+      - dating-network
+
+  date-service:
+    build: ./date-service
+    container_name: date-service
+    ports:
+      - "50003:50003"
+    env_file:
+      - ./date-service/.env
+    environment:
+      - DB_HOST=host.docker.internal
+      - PROFILE_SERVICE_ADDR=profiles-service:50004
+      - USER_SERVICE_ADDR=users-service:50001
+      - LOG_SERVICE_ADDR=logs-service:50002
+      - PORT=50003
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - dating-network
